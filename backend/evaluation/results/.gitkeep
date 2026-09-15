@@ -1,0 +1,6 @@
+# Evaluation results (generated)
+
+JSON reports written by `python scripts/run_evaluation.py`.
+
+- `latest.json` — most recent run
+- `eval_<timestamp>.json` — stamped history

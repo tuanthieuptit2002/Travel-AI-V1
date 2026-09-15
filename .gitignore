@@ -1,0 +1,25 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+!**/.env.example
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+*.py[cod]
+
+# Evaluation stamped runs (keep baseline + latest)
+backend/evaluation/results/eval_*.json
+
+# Editor / OS
+.DS_Store
+.vscode/
