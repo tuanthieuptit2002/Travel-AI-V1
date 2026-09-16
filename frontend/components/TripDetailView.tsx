@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { TripDetail, getTrip } from "../lib/api";
@@ -9,9 +8,10 @@ import { TripResultPanel } from "./TripResultPanel";
 
 type TripDetailViewProps = {
   tripId: string;
+  onBack?: () => void;
 };
 
-export function TripDetailView({ tripId }: TripDetailViewProps) {
+export function TripDetailView({ tripId, onBack }: TripDetailViewProps) {
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,9 +43,15 @@ export function TripDetailView({ tripId }: TripDetailViewProps) {
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error || "Không tìm thấy chuyến đi."}
         </p>
-        <Link href="/trips" className="text-sm text-lagoon hover:underline">
-          Quay lại danh sách chuyến đi
-        </Link>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-sm text-lagoon hover:underline"
+          >
+            Quay lại
+          </button>
+        ) : null}
       </div>
     );
   }

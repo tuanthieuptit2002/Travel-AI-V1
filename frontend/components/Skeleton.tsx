@@ -39,3 +39,22 @@ export function TripListSkeleton() {
     </div>
   );
 }
+
+export function ChatLandingSkeleton() {
+  return (
+    <div className="flex min-h-screen flex-col bg-[linear-gradient(165deg,#f7fcfa_0%,#e3f1ec_45%,#cfe6de_100%)] text-ink">
+      <div className="border-b border-tide/10 bg-foam/70 px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-8 w-52" />
+        </div>
+      </div>
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-6 py-16">
+        <Skeleton className="h-6 w-44 rounded-full" />
+        <Skeleton className="mt-6 h-12 w-80" />
+        <Skeleton className="mt-4 h-4 w-64" />
+        <Skeleton className="mt-10 h-44 w-full rounded-[1.75rem]" />
+      </div>
+    </div>
+  );
+}

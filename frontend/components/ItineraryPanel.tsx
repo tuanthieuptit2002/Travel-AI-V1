@@ -13,27 +13,37 @@ const KIND_LABEL: Record<string, string> = {
 
 function ActivityItem({ activity, currency }: ActivityItemProps) {
   return (
-    <li className="relative pl-6">
-      <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-lagoon" aria-hidden />
+    <li className="relative pl-7">
+      <span
+        aria-hidden
+        className={[
+          "absolute left-0 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-foam ring-2",
+          activity.kind === "restaurant" ? "bg-coral ring-coral/20" : "bg-lagoon ring-lagoon/20",
+        ].join(" ")}
+      />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm font-semibold text-ink">
           {activity.name}
-          <span className="ml-2 text-xs font-normal uppercase tracking-wide text-tide/50">
+          <span className="ml-2 rounded-full bg-mist px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-tide/60">
             {KIND_LABEL[activity.kind] || activity.kind}
           </span>
         </p>
-        <p className="text-xs text-ink/55">
+        <p className="font-mono text-xs tabular-nums text-ink/55">
           {formatTime(activity.start_time)}–{formatTime(activity.end_time)}
         </p>
       </div>
-      <p className="mt-1 text-sm text-ink/70">{activity.reason}</p>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-tide/70">
-        <span>{formatMoney(activity.estimated_cost, currency)}</span>
-        {activity.rating != null ? <span>Đánh giá {activity.rating.toFixed(1)}</span> : null}
-        {activity.travel_time_from_previous > 0 ? (
-          <span>{activity.travel_time_from_previous} phút từ điểm trước</span>
+      <p className="mt-1 text-sm leading-6 text-ink/70">{activity.reason}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tide/70">
+        <span className="rounded-full bg-mist/80 px-2 py-0.5 font-medium tabular-nums text-tide">
+          {formatMoney(activity.estimated_cost, currency)}
+        </span>
+        {activity.rating != null ? (
+          <span className="tabular-nums">★ {activity.rating.toFixed(1)}</span>
         ) : null}
-        {activity.opening_hours ? <span>{activity.opening_hours}</span> : null}
+        {activity.travel_time_from_previous > 0 ? (
+          <span>· {activity.travel_time_from_previous} phút từ điểm trước</span>
+        ) : null}
+        {activity.opening_hours ? <span>· {activity.opening_hours}</span> : null}
       </div>
     </li>
   );
@@ -50,21 +60,31 @@ export function ItineraryDayCard({ day, currency }: ItineraryDayCardProps) {
   const dayCost = day.activities.reduce((sum, item) => sum + Number(item.estimated_cost), 0);
 
   return (
-    <article className="rounded-2xl border border-tide/10 bg-foam/90 p-5">
-      <header className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h3 className="font-display text-2xl text-tide">Ngày {day.day_number}</h3>
-          <p className="text-sm text-ink/55">{day.date}</p>
-          {day.theme ? (
-            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-lagoon">{day.theme}</p>
-          ) : null}
+    <article className="group overflow-hidden rounded-2xl border border-tide/10 bg-foam/90 shadow-soft transition duration-300 hover:shadow-lift">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-tide/10 bg-gradient-to-r from-mist/70 to-transparent px-5 py-4">
+        <div className="flex items-end gap-3.5">
+          <span
+            aria-hidden
+            className="font-display text-4xl leading-none tracking-tight text-coral/90 transition-transform duration-300 group-hover:-translate-y-0.5"
+          >
+            {String(day.day_number).padStart(2, "0")}
+          </span>
+          <div>
+            <h3 className="font-display text-xl text-tide">Ngày {day.day_number}</h3>
+            <p className="text-xs text-ink/55">{day.date}</p>
+            {day.theme ? (
+              <p className="mt-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-lagoon">
+                {day.theme}
+              </p>
+            ) : null}
+          </div>
         </div>
-        <p className="text-sm font-medium text-ink">
+        <p className="rounded-full bg-tide px-3 py-1 text-xs font-medium tabular-nums text-foam">
           Ước tính ngày: {formatMoney(dayCost, currency)}
         </p>
       </header>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 p-5 lg:grid-cols-2">
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-tide/55">
             Dòng thời gian

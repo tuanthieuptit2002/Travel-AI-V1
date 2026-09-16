@@ -73,9 +73,17 @@ export function PreferencesPanel() {
   }, []);
 
   useEffect(() => {
-    const id = getGuestUserId();
-    setUserId(id);
-    void load(id);
+    let active = true;
+    async function bootstrap() {
+      const id = getGuestUserId();
+      if (!active) return;
+      setUserId(id);
+      await load(id);
+    }
+    void bootstrap();
+    return () => {
+      active = false;
+    };
   }, [load]);
 
   async function handleAdd(event: FormEvent) {

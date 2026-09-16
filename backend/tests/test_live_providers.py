@@ -20,6 +20,7 @@ from app.providers.models import (
     WeatherRequest,
 )
 from app.providers.open_meteo import OpenMeteoProvider
+from app.providers.osm import OsmPlacesProvider, OsmRoutesProvider
 from app.tools import ToolDependencies
 
 
@@ -197,16 +198,17 @@ def test_build_tool_dependencies_defaults_to_mocks() -> None:
     assert isinstance(deps.weather, MockWeatherProvider)
 
 
-def test_build_tool_dependencies_live_without_google_key_keeps_place_mocks() -> None:
+def test_build_tool_dependencies_live_without_google_key_uses_osm_providers() -> None:
     deps = build_tool_dependencies(
         Settings(
             travel_data_mode="live",
+            maps_provider="auto",
             google_maps_api_key="",
             open_meteo_base_url="https://api.open-meteo.com",
         )
     )
-    assert isinstance(deps.places, MockPlacesProvider)
-    assert isinstance(deps.routes, MockRouteProvider)
+    assert isinstance(deps.places, OsmPlacesProvider)
+    assert isinstance(deps.routes, OsmRoutesProvider)
     assert isinstance(deps.weather, OpenMeteoProvider)
 
 

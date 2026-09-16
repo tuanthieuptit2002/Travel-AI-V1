@@ -1,4 +1,5 @@
-import { authHeaders } from "./auth";
+import { authHeaders, getStoredTokenUserId, refreshGuestAccessToken } from "./auth";
+import { getGuestUserId } from "./guest-user";
 
 export type ProgressStep = {
   id: string;
@@ -122,10 +123,29 @@ async function readError(response: Response, fallback: string): Promise<string> 
   return fallback;
 }
 
+/**
+ * Authenticated fetch. A cached guest JWT can outlive its `exp`, so a `401`
+ * almost always means the token expired: mint a fresh one once, then retry.
+ */
+async function authedFetch(url: string, init: RequestInit & { userId?: string } = {}): Promise<Response> {
+  const { userId, ...requestInit } = init;
+  const headers = {
+    ...(await authHeaders(userId)),
+    ...(requestInit.headers as Record<string, string> | undefined),
+  };
+  const response = await fetch(url, { ...requestInit, headers });
+  if (response.status !== 401) return response;
+
+  const refreshUserId = userId ?? getStoredTokenUserId() ?? getGuestUserId();
+  const refreshed = await refreshGuestAccessToken(refreshUserId);
+  if (!refreshed) return response;
+  return fetch(url, { ...requestInit, headers: { ...headers, Authorization: `Bearer ${refreshed}` } });
+}
+
 export async function planTrip(payload: PlanTripPayload): Promise<TripPlanResponse> {
-  const response = await fetch(`${API_BASE}/trips/plan`, {
+  const response = await authedFetch(`${API_BASE}/trips/plan`, {
     method: "POST",
-    headers: await authHeaders(payload.user_id),
+    userId: payload.user_id,
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -137,9 +157,9 @@ export async function planTrip(payload: PlanTripPayload): Promise<TripPlanRespon
 export async function listTrips(userId?: string): Promise<TripListResponse> {
   const url = new URL(`${API_BASE}/trips`);
   if (userId) url.searchParams.set("user_id", userId);
-  const response = await fetch(url.toString(), {
+  const response = await authedFetch(url.toString(), {
     cache: "no-store",
-    headers: await authHeaders(userId),
+    userId,
   });
   if (!response.ok) {
     throw new Error(await readError(response, "Không thể tải danh sách chuyến đi."));
@@ -148,9 +168,9 @@ export async function listTrips(userId?: string): Promise<TripListResponse> {
 }
 
 export async function getTrip(tripId: string, userId?: string): Promise<TripDetail> {
-  const response = await fetch(`${API_BASE}/trips/${tripId}`, {
+  const response = await authedFetch(`${API_BASE}/trips/${tripId}`, {
     cache: "no-store",
-    headers: await authHeaders(userId),
+    userId,
   });
   if (!response.ok) {
     throw new Error(await readError(response, "Không tìm thấy chuyến đi."));
@@ -159,9 +179,9 @@ export async function getTrip(tripId: string, userId?: string): Promise<TripDeta
 }
 
 export async function getUserMemory(userId: string): Promise<UserMemory> {
-  const response = await fetch(`${API_BASE}/memory/${userId}`, {
+  const response = await authedFetch(`${API_BASE}/memory/${userId}`, {
     cache: "no-store",
-    headers: await authHeaders(userId),
+    userId,
   });
   if (!response.ok) {
     throw new Error(await readError(response, "Không thể tải sở thích du lịch."));
@@ -178,9 +198,9 @@ export async function updateUserMemory(
     source_excerpt?: string;
   },
 ): Promise<UserMemory> {
-  const response = await fetch(`${API_BASE}/memory/${userId}`, {
+  const response = await authedFetch(`${API_BASE}/memory/${userId}`, {
     method: "POST",
-    headers: await authHeaders(userId),
+    userId,
     body: JSON.stringify({
       evidence: "explicit_user_statement",
       ...payload,
@@ -193,9 +213,9 @@ export async function updateUserMemory(
 }
 
 export async function clearUserMemory(userId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/memory/${userId}`, {
+  const response = await authedFetch(`${API_BASE}/memory/${userId}`, {
     method: "DELETE",
-    headers: await authHeaders(userId),
+    userId,
   });
   if (!response.ok) {
     throw new Error(await readError(response, "Không thể xóa sở thích."));
@@ -203,9 +223,9 @@ export async function clearUserMemory(userId: string): Promise<void> {
 }
 
 export async function clearMemoryField(userId: string, field: MemoryField): Promise<UserMemory> {
-  const response = await fetch(`${API_BASE}/memory/${userId}/${field}`, {
+  const response = await authedFetch(`${API_BASE}/memory/${userId}/${field}`, {
     method: "DELETE",
-    headers: await authHeaders(userId),
+    userId,
   });
   if (!response.ok) {
     throw new Error(await readError(response, "Không thể xóa mục sở thích."));
@@ -240,3 +260,12 @@ export const PLANNING_STEPS: ProgressStep[] = [
   { id: "finalize", label: "Đang chuẩn bị gợi ý", status: "pending" },
   { id: "update_memory", label: "Đang lưu sở thích rõ ràng", status: "pending" },
 ];
+
+/** Local-only progress animation used while the agent request is in flight. */
+export function advanceLocalProgress(steps: ProgressStep[], tick: number): ProgressStep[] {
+  return steps.map((step, index) => {
+    if (index < tick) return { ...step, status: "completed" };
+    if (index === tick) return { ...step, status: "running" };
+    return { ...step, status: "pending" };
+  });
+}

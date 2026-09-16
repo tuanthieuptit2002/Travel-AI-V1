@@ -28,11 +28,17 @@ type TripResultPanelProps = {
 export function TripResultPanel({ plan }: TripResultPanelProps) {
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-tide/10 bg-foam/90 p-5">
+      <section className="relative overflow-hidden rounded-2xl border border-tide/10 bg-foam/90 p-5 shadow-soft">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(242,102,59,0.10),transparent_70%)]"
+        />
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lagoon">
           {plan.is_valid ? "Tóm tắt chuyến đi" : "Bản nháp cần xem lại"}
         </p>
-        <h2 className="mt-2 font-display text-3xl text-tide">{plan.destination}</h2>
+        <h2 className="text-balance mt-2 font-display text-3xl tracking-tight text-tide">
+          {plan.destination}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-ink/70">{plan.summary}</p>
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div>
