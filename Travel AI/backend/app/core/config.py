@@ -51,23 +51,11 @@ class Settings(BaseSettings):
 
     # Travel providers
     travel_data_mode: str = "mock"
-    # Maps adapter choice: "auto" (Google when a key exists, otherwise keyless OSM),
-    # "google" (Places + Routes APIs) or "osm" (Nominatim + Overpass + OSRM).
-    maps_provider: str = "auto"
-    google_maps_api_key: str = ""
     open_meteo_base_url: str = "https://api.open-meteo.com"
     open_meteo_geocoding_url: str = "https://geocoding-api.open-meteo.com"
     provider_http_timeout_seconds: float = 10.0
     provider_http_max_retries: int = 3
     provider_http_backoff_seconds: float = 0.5
-
-    # OpenStreetMap providers (no API key; public instances require polite usage)
-    osm_nominatim_url: str = "https://nominatim.openstreetmap.org"
-    osm_overpass_url: str = "https://overpass-api.de/api"
-    osm_osrm_url: str = "https://router.project-osrm.org"
-    osm_user_agent: str = "TripMindAI/0.1 (+https://github.com/tunthieudev/Travel-AI-Agent)"
-    osm_min_request_interval_seconds: float = 1.0
-    osm_search_radius_km: float = 12.0
 
     # LLM / embeddings
     openai_api_key: str = ""
@@ -121,14 +109,6 @@ class Settings(BaseSettings):
             raise ValueError("TRAVEL_DATA_MODE must be 'mock' or 'live'")
         return normalized
 
-    @field_validator("maps_provider")
-    @classmethod
-    def validate_maps_provider(cls, value: str) -> str:
-        normalized = value.strip().casefold()
-        if normalized not in {"auto", "google", "osm"}:
-            raise ValueError("MAPS_PROVIDER must be 'auto', 'google', or 'osm'")
-        return normalized
-
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
         if not self.is_production:
@@ -149,15 +129,6 @@ class Settings(BaseSettings):
         if "localhost" in self.cors_origins and self.is_production:
             # Allow empty override via explicit CORS_ORIGINS without localhost.
             pass
-        # Keyless OpenStreetMap providers keep live mode possible without Google credentials.
-        if (
-            self.travel_data_mode == "live"
-            and self.maps_provider == "google"
-            and not self.google_maps_api_key
-        ):
-            raise ValueError(
-                "GOOGLE_MAPS_API_KEY is required when TRAVEL_DATA_MODE=live and MAPS_PROVIDER=google."
-            )
         return self
 
 

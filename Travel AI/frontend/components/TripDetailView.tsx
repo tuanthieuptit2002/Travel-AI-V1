@@ -72,6 +72,7 @@ export function TripDetailView({ tripId, onBack }: TripDetailViewProps) {
         itinerary: trip.itinerary,
         warnings: trip.warnings,
         recommendations: trip.recommendations,
+        weather: trip.weather,
         weather_notes: trip.weather_notes,
         is_valid: trip.status !== "needs_review",
       }}

@@ -27,6 +27,17 @@ export type ItineraryDay = {
   activities: ItineraryActivity[];
 };
 
+export type WeatherForecast = {
+  destination: string;
+  forecast_date: string;
+  condition: string;
+  temperature_min_c: number;
+  temperature_max_c: number;
+  precipitation_probability: number;
+  humidity_percent: number;
+  wind_speed_kph: number;
+};
+
 export type TripPlanResponse = {
   trip_id?: string | null;
   summary: string;
@@ -41,6 +52,7 @@ export type TripPlanResponse = {
   itinerary: ItineraryDay[];
   warnings: string[];
   recommendations: string[];
+  weather?: WeatherForecast[];
   weather_notes?: string[];
   citations?: string[];
   optimization_notes?: string[];
@@ -68,6 +80,7 @@ export type TripDetail = TripSummary & {
   itinerary: ItineraryDay[];
   warnings: string[];
   recommendations: string[];
+  weather?: WeatherForecast[];
   weather_notes?: string[];
 };
 

@@ -73,10 +73,24 @@ class TripItinerary(BaseModel):
     summary: str = ""
 
 
+class WeatherForecast(BaseModel):
+    """Weather data retained from the provider for clients, not only a text note."""
+
+    destination: str
+    forecast_date: date
+    condition: str
+    temperature_min_c: float
+    temperature_max_c: float
+    precipitation_probability: int = Field(ge=0, le=100)
+    humidity_percent: int = Field(ge=0, le=100)
+    wind_speed_kph: float = Field(ge=0)
+
+
 class FinalTravelResponse(BaseModel):
     headline: str
     overview: str
     itinerary: TripItinerary
+    weather: List[WeatherForecast] = Field(default_factory=list)
     weather_notes: List[str] = Field(default_factory=list)
     budget_notes: List[str] = Field(default_factory=list)
     knowledge_notes: List[str] = Field(default_factory=list)

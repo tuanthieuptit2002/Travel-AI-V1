@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from datetime import date
 
 import httpx
@@ -9,18 +8,14 @@ import pytest
 from app.core.config import Settings
 from app.providers.errors import ProviderError
 from app.providers.factory import build_tool_dependencies
-from app.providers.google import GooglePlacesProvider, GoogleRoutesProvider
 from app.providers.http import ProviderHttpClient
 from app.providers.mock import MockPlacesProvider, MockRouteProvider, MockWeatherProvider
 from app.providers.models import (
-    PlaceCategory,
-    PlaceSearchRequest,
     RouteRequest,
     TravelMode,
     WeatherRequest,
 )
 from app.providers.open_meteo import OpenMeteoProvider
-from app.providers.osm import OsmPlacesProvider, OsmRoutesProvider
 from app.tools import ToolDependencies
 
 
@@ -64,91 +59,6 @@ def test_http_client_raises_structured_error_without_leaking_secrets() -> None:
         client.get_json("https://example.test/resource?key=SECRET")
     assert exc.value.code == "upstream_error"
     assert "SECRET" not in str(exc.value)
-
-
-def test_google_places_provider_normalizes_search_and_details() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        assert "X-Goog-Api-Key" in request.headers
-        assert request.headers["X-Goog-Api-Key"] == "test-key"
-        if request.url.path.endswith(":searchText"):
-            return httpx.Response(
-                200,
-                json={
-                    "places": [
-                        {
-                            "id": "places/abc123",
-                            "displayName": {"text": "My Khe Beach"},
-                            "formattedAddress": "Vo Nguyen Giap, Da Nang, Vietnam",
-                            "location": {"latitude": 16.05, "longitude": 108.24},
-                            "types": ["tourist_attraction", "beach"],
-                            "rating": 4.6,
-                            "priceLevel": "PRICE_LEVEL_INEXPENSIVE",
-                        }
-                    ]
-                },
-            )
-        return httpx.Response(
-            200,
-            json={
-                "id": "places/abc123",
-                "displayName": {"text": "My Khe Beach"},
-                "formattedAddress": "Vo Nguyen Giap, Da Nang, Vietnam",
-                "location": {"latitude": 16.05, "longitude": 108.24},
-                "types": ["tourist_attraction"],
-                "rating": 4.6,
-                "priceLevel": "PRICE_LEVEL_INEXPENSIVE",
-                "websiteUri": "https://example.com",
-                "regularOpeningHours": {"weekdayDescriptions": ["Monday: Open 24 hours"]},
-                "editorialSummary": {"text": "Popular Da Nang beach."},
-            },
-        )
-
-    http = ProviderHttpClient(
-        provider="google_places",
-        max_retries=0,
-        backoff_seconds=0,
-        client=_mock_client(handler),
-    )
-    provider = GooglePlacesProvider("test-key", http_client=http)
-    results = provider.search_places(
-        PlaceSearchRequest(query="beach", destination="Da Nang", category=PlaceCategory.ATTRACTION)
-    )
-    assert len(results) == 1
-    assert results[0].id == "places/abc123"
-    assert results[0].category is PlaceCategory.ATTRACTION
-
-    details = provider.get_place_details("places/abc123")
-    assert details is not None
-    assert details.opening_hours == "Monday: Open 24 hours"
-    assert details.price_level == "low"
-    assert details.website == "https://example.com"
-
-
-def test_google_routes_provider_supports_coordinate_waypoints() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        body = json.loads(request.content.decode())
-        assert "location" in body["origin"]
-        assert body["travelMode"] == "DRIVE"
-        return httpx.Response(
-            200,
-            json={"routes": [{"distanceMeters": 28600, "duration": "1860s"}]},
-        )
-
-    http = ProviderHttpClient(
-        provider="google_routes",
-        max_retries=0,
-        client=_mock_client(handler),
-    )
-    provider = GoogleRoutesProvider("test-key", http_client=http)
-    result = provider.calculate_route(
-        RouteRequest(
-            origin="16.0544,108.2022",
-            destination="15.8801,108.3380",
-            travel_mode=TravelMode.DRIVING,
-        )
-    )
-    assert result.distance_km == 28.6
-    assert result.duration_minutes == 31
 
 
 def test_open_meteo_provider_geocodes_and_forecasts() -> None:
@@ -198,26 +108,15 @@ def test_build_tool_dependencies_defaults_to_mocks() -> None:
     assert isinstance(deps.weather, MockWeatherProvider)
 
 
-def test_build_tool_dependencies_live_without_google_key_uses_osm_providers() -> None:
+def test_build_tool_dependencies_live_uses_curated_place_suggestions() -> None:
     deps = build_tool_dependencies(
         Settings(
             travel_data_mode="live",
-            maps_provider="auto",
-            google_maps_api_key="",
             open_meteo_base_url="https://api.open-meteo.com",
         )
     )
-    assert isinstance(deps.places, OsmPlacesProvider)
-    assert isinstance(deps.routes, OsmRoutesProvider)
-    assert isinstance(deps.weather, OpenMeteoProvider)
-
-
-def test_build_tool_dependencies_live_with_google_key() -> None:
-    deps = build_tool_dependencies(
-        Settings(travel_data_mode="live", google_maps_api_key="secret-key")
-    )
-    assert isinstance(deps.places, GooglePlacesProvider)
-    assert isinstance(deps.routes, GoogleRoutesProvider)
+    assert isinstance(deps.places, MockPlacesProvider)
+    assert isinstance(deps.routes, MockRouteProvider)
     assert isinstance(deps.weather, OpenMeteoProvider)
 
 

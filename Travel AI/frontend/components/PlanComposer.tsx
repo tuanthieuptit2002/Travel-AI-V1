@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import type { PlanTripPayload } from "../lib/api";
 import {
@@ -33,9 +33,9 @@ const PROMPT_CHIPS: { label: string; prompt: string }[] = [
       "Gợi ý chuyến Hội An 3 ngày cho gia đình 4 người, ưu tiên phố cổ, làng gốm và món ăn địa phương.",
   },
   {
-    label: "Sa Pa săn mây",
+    label: "Đà Lạt săn mây",
     prompt:
-      "Tôi muốn đi Sa Pa 3 ngày 2 đêm cho 2 người, thích trekking nhẹ và chụp ảnh ruộng bậc thang.",
+      "Tôi muốn đi Đà Lạt 3 ngày 2 đêm cho 2 người, thích săn mây, trekking nhẹ và chụp ảnh đồi thông.",
   },
   {
     label: "Phú Quốc nghỉ dưỡng",
@@ -53,7 +53,7 @@ type PlanComposerProps = {
   onDraftChange: (draft: PlanDraft) => void;
   onSubmit: (payload: PlanTripPayload) => void;
   busy: boolean;
-  variant?: "hero" | "docked";
+  variant?: "hero" | "docked" | "workspace";
 };
 
 export function PlanComposer({
@@ -64,6 +64,16 @@ export function PlanComposer({
   variant = "hero",
 }: PlanComposerProps) {
   const [showOptions, setShowOptions] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Keep long prompts in the document flow instead of creating a second scrollbar
+  // inside the composer. The page remains the single vertical scroll surface.
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [draft.user_request]);
 
   // `travelers` and `travel_pace` always have defaults, so `buildUserRequest` is never
   // empty. A real trip needs a free-text prompt or at least a destination.
@@ -106,11 +116,12 @@ export function PlanComposer({
       <label className="block">
         <span className="sr-only">Mô tả chuyến đi</span>
         <textarea
+          ref={textareaRef}
           value={draft.user_request}
           onChange={(event) => update("user_request", event.target.value)}
           onKeyDown={handleKeyDown}
-          rows={variant === "hero" ? 3 : 2}
-          className="w-full resize-none bg-transparent text-base leading-7 text-ink outline-none placeholder:text-ink/40"
+          rows={variant === "hero" ? 3 : variant === "workspace" ? 7 : 2}
+          className="w-full resize-none overflow-hidden bg-transparent text-base leading-7 text-ink outline-none placeholder:text-ink/40"
           placeholder={
             variant === "hero"
               ? "Mô tả chuyến đi của bạn… ví dụ: Đà Nẵng 4 ngày cho 2 người, thích biển và ẩm thực"

@@ -2,15 +2,13 @@
 
 import type { ProgressStep, TripPlanResponse } from "../lib/api";
 import { ProgressList } from "./ProgressList";
-import { TripDetailView } from "./TripDetailView";
 import { TripResultPanel } from "./TripResultPanel";
 
 export type ConversationTurn = {
   id: string;
-  kind: "plan" | "trip";
+  kind: "plan";
   request: string;
   status: "planning" | "ready" | "error";
-  tripId?: string;
   plan?: TripPlanResponse | null;
   progress: ProgressStep[];
   error?: string | null;
@@ -22,6 +20,9 @@ type ChatTurnProps = {
 };
 
 export function ChatTurn({ turn, onRetry }: ChatTurnProps) {
+  const hasEmptyInvalidPlan =
+    turn.status === "ready" && turn.plan && !turn.plan.is_valid && turn.plan.itinerary.length === 0;
+
   return (
     <article className="animate-fade-up space-y-4">
       <div className="flex justify-end">
@@ -39,15 +40,11 @@ export function ChatTurn({ turn, onRetry }: ChatTurnProps) {
             ✦
           </span>
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-tide/60">
-            {turn.kind === "trip" ? "Chuyến đi đã lưu" : "TripMind"}
+            TripMind
           </span>
         </div>
 
         <div className="mt-4 space-y-5">
-          {turn.kind === "trip" && turn.tripId ? (
-            <TripDetailView tripId={turn.tripId} />
-          ) : null}
-
           {turn.status === "planning" ? (
             <>
               <p className="text-sm leading-6 text-ink/70">
@@ -74,7 +71,27 @@ export function ChatTurn({ turn, onRetry }: ChatTurnProps) {
             </div>
           ) : null}
 
-          {turn.status === "ready" && turn.plan ? <TripResultPanel plan={turn.plan} /> : null}
+          {hasEmptyInvalidPlan ? (
+            <div className="space-y-3">
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
+                Chưa thể tạo lịch trình cụ thể cho yêu cầu này. Hãy thử chọn một điểm đến được hỗ trợ,
+                hoặc kiểm tra lại kết nối và credit của API AI.
+              </p>
+              {onRetry ? (
+                <button
+                  type="button"
+                  onClick={() => onRetry(turn)}
+                  className="rounded-full border border-tide/20 px-4 py-2 text-sm text-tide transition hover:border-lagoon hover:text-lagoon"
+                >
+                  Sửa prompt và thử lại
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {turn.status === "ready" && turn.plan && !hasEmptyInvalidPlan ? (
+            <TripResultPanel plan={turn.plan} />
+          ) : null}
         </div>
       </div>
     </article>

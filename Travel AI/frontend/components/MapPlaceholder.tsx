@@ -2,6 +2,10 @@ type MapPlaceholderProps = {
   destination: string;
 };
 
+function googleMapsSearchUrl(query: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 export function MapPlaceholder({ destination }: MapPlaceholderProps) {
   return (
     <section className="overflow-hidden rounded-2xl border border-tide/10 bg-foam/90 shadow-soft">
@@ -36,9 +40,15 @@ export function MapPlaceholder({ destination }: MapPlaceholderProps) {
             </svg>
           </span>
         </div>
-        <p className="absolute inset-x-0 bottom-3 z-10 px-4 text-center text-xs text-tide/60">
-          Bản đồ trực tiếp cho {destination} sẽ được kết nối sau.
-        </p>
+        <a
+          href={googleMapsSearchUrl(destination)}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute bottom-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-tide px-3 py-2 text-xs font-semibold text-foam shadow-soft transition hover:bg-lagoon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lagoon focus-visible:ring-offset-2"
+        >
+          Mở {destination} trên Google Maps
+          <span aria-hidden>↗</span>
+        </a>
       </div>
     </section>
   );

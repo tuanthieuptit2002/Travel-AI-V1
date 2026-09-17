@@ -14,11 +14,9 @@ from app.core.config import Settings, get_settings
 from app.knowledge.embeddings import build_embedding_provider
 from app.knowledge.service import KnowledgeService
 from app.knowledge.store import InMemoryKnowledgeStore
-from app.providers.google import GooglePlacesProvider, GoogleRoutesProvider
 from app.providers.mock import MockPlacesProvider, MockRouteProvider, MockWeatherProvider
 from app.providers.mock.travel import MockFlightProvider, MockHotelProvider
 from app.providers.open_meteo import OpenMeteoProvider
-from app.providers.osm import NominatimGeocoder, OsmPlacesProvider, OsmRoutesProvider
 
 logger = logging.getLogger(__name__)
 
@@ -45,70 +43,6 @@ def build_knowledge_service(settings: Optional[Settings] = None) -> KnowledgeSer
     except Exception:  # noqa: BLE001
         logger.exception("Knowledge seed failed; continuing with empty store")
     return service
-
-
-def _build_maps_providers(cfg: Settings):
-    """Choose the places/routes adapters: Google (needs a key) or keyless OpenStreetMap.
-
-    ``MAPS_PROVIDER=auto`` (default) prefers Google when a key exists and otherwise
-    falls back to the keyless OSM stack, so live mode never silently degrades to mocks.
-    """
-    choice = (cfg.maps_provider or "auto").strip().lower()
-    google_ready = bool(cfg.google_maps_api_key)
-
-    if choice == "google" and not google_ready:
-        logger.warning(
-            "MAPS_PROVIDER=google but GOOGLE_MAPS_API_KEY is missing; using OpenStreetMap providers"
-        )
-    elif google_ready and choice in {"auto", "google"}:
-        logger.info("Configured Google Places and Routes providers (maps_provider=%s)", choice)
-        return (
-            GooglePlacesProvider(
-                cfg.google_maps_api_key,
-                timeout_seconds=cfg.provider_http_timeout_seconds,
-                max_retries=cfg.provider_http_max_retries,
-                backoff_seconds=cfg.provider_http_backoff_seconds,
-            ),
-            GoogleRoutesProvider(
-                cfg.google_maps_api_key,
-                timeout_seconds=cfg.provider_http_timeout_seconds,
-                max_retries=cfg.provider_http_max_retries,
-                backoff_seconds=cfg.provider_http_backoff_seconds,
-            ),
-        )
-
-    # One shared geocoder keeps the Nominatim cache warm and honours its 1 req/s policy.
-    geocoder = NominatimGeocoder(
-        base_url=cfg.osm_nominatim_url,
-        user_agent=cfg.osm_user_agent,
-        min_interval_seconds=cfg.osm_min_request_interval_seconds,
-        timeout_seconds=cfg.provider_http_timeout_seconds,
-        max_retries=cfg.provider_http_max_retries,
-        backoff_seconds=cfg.provider_http_backoff_seconds,
-    )
-    logger.info(
-        "Configured OpenStreetMap providers (Nominatim + Overpass + OSRM) maps_provider=%s",
-        choice,
-    )
-    return (
-        OsmPlacesProvider(
-            overpass_url=cfg.osm_overpass_url,
-            user_agent=cfg.osm_user_agent,
-            geocoder=geocoder,
-            search_radius_km=cfg.osm_search_radius_km,
-            timeout_seconds=cfg.provider_http_timeout_seconds,
-            max_retries=cfg.provider_http_max_retries,
-            backoff_seconds=cfg.provider_http_backoff_seconds,
-        ),
-        OsmRoutesProvider(
-            osrm_url=cfg.osm_osrm_url,
-            user_agent=cfg.osm_user_agent,
-            geocoder=geocoder,
-            timeout_seconds=cfg.provider_http_timeout_seconds,
-            max_retries=cfg.provider_http_max_retries,
-            backoff_seconds=cfg.provider_http_backoff_seconds,
-        ),
-    )
 
 
 def build_tool_dependencies(settings: Optional[Settings] = None):
@@ -145,8 +79,6 @@ def build_tool_dependencies(settings: Optional[Settings] = None):
             memory=memory,
         )
 
-    places, routes = _build_maps_providers(cfg)
-
     weather = OpenMeteoProvider(
         base_url=cfg.open_meteo_base_url,
         geocoding_url=cfg.open_meteo_geocoding_url,
@@ -154,12 +86,15 @@ def build_tool_dependencies(settings: Optional[Settings] = None):
         max_retries=cfg.provider_http_max_retries,
         backoff_seconds=cfg.provider_http_backoff_seconds,
     )
-    logger.info("Configured Open-Meteo weather provider base_url=%s", cfg.open_meteo_base_url)
+    logger.info(
+        "Configured curated Vietnam place suggestions with Open-Meteo weather provider base_url=%s",
+        cfg.open_meteo_base_url,
+    )
 
     return ToolDependencies(
-        places=places,
+        places=MockPlacesProvider(),
         weather=weather,
-        routes=routes,
+        routes=MockRouteProvider(),
         knowledge=knowledge,
         memory=memory,
     )

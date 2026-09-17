@@ -22,7 +22,6 @@ class ReadinessResponse(BaseModel):
     redis: str
     auth_enabled: bool
     travel_data_mode: str
-    maps_provider: str
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -48,5 +47,4 @@ async def readiness_check() -> ReadinessResponse:
         redis="ok" if redis_ok else "unavailable",
         auth_enabled=settings.auth_enabled,
         travel_data_mode=settings.travel_data_mode,
-        maps_provider=settings.maps_provider,
     )

@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from app.agent.models import FinalTravelResponse, TripItinerary
+from app.agent.models import FinalTravelResponse, TripItinerary, WeatherForecast
 from app.agent.optimization import BudgetAgent, ItineraryOptimizer
 from app.agent.parser import DeterministicRequestParser, RequestParser
 from app.agent.planner import build_grounded_itinerary, iso_to_date
@@ -440,12 +440,13 @@ def finalize_response(state: TravelAgentState, ctx: TravelAgentContext) -> Dict[
         return {"final_response": empty.model_dump(mode="json")}
 
     itinerary = TripItinerary.model_validate(raw)
+    weather = [WeatherForecast.model_validate(item) for item in state.get("weather") or []]
     weather_notes = [
         (
-            f"{item['forecast_date']}: {item['condition']}, "
-            f"{item['temperature_min_c']:.0f}–{item['temperature_max_c']:.0f}°C"
+            f"{item.forecast_date}: {item.condition}, "
+            f"{item.temperature_min_c:.0f}–{item.temperature_max_c:.0f}°C"
         )
-        for item in state.get("weather") or []
+        for item in weather
     ]
     remaining = itinerary.total_budget - itinerary.estimated_total_cost
     budget_notes = [
@@ -489,6 +490,7 @@ def finalize_response(state: TravelAgentState, ctx: TravelAgentContext) -> Dict[
         headline=headline,
         overview=overview,
         itinerary=itinerary,
+        weather=weather,
         weather_notes=weather_notes,
         budget_notes=budget_notes,
         knowledge_notes=knowledge_notes,

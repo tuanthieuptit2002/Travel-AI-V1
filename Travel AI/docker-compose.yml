@@ -37,10 +37,5 @@ volumes:
   postgres_data:
   redis_data:
 
-# Optional: pass provider secrets into a future API container via env_file / environment.
-# Keep GOOGLE_MAPS_API_KEY server-side only. Never inject it into the Next.js build.
-# Example:
-#   environment:
-#     TRAVEL_DATA_MODE: live
-#     GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
-#     OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://api.open-meteo.com}
+# Place suggestions use the built-in Vietnam catalog. The frontend opens Google Maps
+# search links directly, so no maps API key is needed.

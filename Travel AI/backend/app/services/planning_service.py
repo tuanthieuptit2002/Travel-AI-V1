@@ -20,6 +20,7 @@ from app.api.schemas.trips import (
     TripListOut,
     TripPlanResponse,
     TripSummaryOut,
+    WeatherForecastOut,
 )
 from app.services.trip_store import StoredTrip, TripStore, get_trip_store
 from app.tools import ToolDependencies
@@ -93,6 +94,7 @@ class PlanningService:
             warnings.append("Một số đoạn trong yêu cầu đã được lọc vì lý do an toàn.")
 
         recommendations = self._build_recommendations(final, itinerary)
+        weather = [WeatherForecastOut.model_validate(item.model_dump()) for item in final.weather]
         weather_notes = list(final.weather_notes)
         citations = list(final.citations)
         optimization_notes = list(final.optimization_notes)
@@ -132,6 +134,7 @@ class PlanningService:
             recommendations=recommendations
             + list(final.knowledge_notes[:3])
             + optimization_notes[:3],
+            weather=weather,
             weather_notes=weather_notes,
             citations=citations,
             optimization_notes=optimization_notes,
@@ -156,6 +159,7 @@ class PlanningService:
                 itinerary=[day.model_dump(mode="json") for day in response.itinerary],
                 warnings=response.warnings,
                 recommendations=response.recommendations,
+                weather=[item.model_dump(mode="json") for item in response.weather],
                 weather_notes=response.weather_notes,
             )
         )
@@ -275,5 +279,6 @@ class PlanningService:
             itinerary=itinerary,
             warnings=list(trip.warnings),
             recommendations=list(trip.recommendations),
+            weather=[WeatherForecastOut.model_validate(item) for item in trip.weather],
             weather_notes=list(trip.weather_notes),
         )

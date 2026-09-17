@@ -4,6 +4,7 @@ import { formatMoney, formatTime } from "../lib/api";
 type ActivityItemProps = {
   activity: ItineraryActivity;
   currency: string;
+  destination: string;
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -11,7 +12,10 @@ const KIND_LABEL: Record<string, string> = {
   restaurant: "nhà hàng",
 };
 
-function ActivityItem({ activity, currency }: ActivityItemProps) {
+function ActivityItem({ activity, currency, destination }: ActivityItemProps) {
+  const mapsQuery = `${activity.name}, ${destination}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+
   return (
     <li className="relative pl-7">
       <span
@@ -44,6 +48,14 @@ function ActivityItem({ activity, currency }: ActivityItemProps) {
           <span>· {activity.travel_time_from_previous} phút từ điểm trước</span>
         ) : null}
         {activity.opening_hours ? <span>· {activity.opening_hours}</span> : null}
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold text-lagoon underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lagoon"
+        >
+          Xem trên Google Maps ↗
+        </a>
       </div>
     </li>
   );
@@ -52,9 +64,10 @@ function ActivityItem({ activity, currency }: ActivityItemProps) {
 type ItineraryDayCardProps = {
   day: ItineraryDay;
   currency: string;
+  destination: string;
 };
 
-export function ItineraryDayCard({ day, currency }: ItineraryDayCardProps) {
+export function ItineraryDayCard({ day, currency, destination }: ItineraryDayCardProps) {
   const attractions = day.activities.filter((item) => item.kind !== "restaurant");
   const restaurants = day.activities.filter((item) => item.kind === "restaurant");
   const dayCost = day.activities.reduce((sum, item) => sum + Number(item.estimated_cost), 0);
@@ -95,6 +108,7 @@ export function ItineraryDayCard({ day, currency }: ItineraryDayCardProps) {
                 key={`${day.day_number}-${activity.place_id}-${activity.start_time}`}
                 activity={activity}
                 currency={currency}
+                destination={destination}
               />
             ))}
           </ol>
@@ -134,9 +148,10 @@ export function ItineraryDayCard({ day, currency }: ItineraryDayCardProps) {
 type ItineraryPanelProps = {
   days: ItineraryDay[];
   currency: string;
+  destination: string;
 };
 
-export function ItineraryPanel({ days, currency }: ItineraryPanelProps) {
+export function ItineraryPanel({ days, currency, destination }: ItineraryPanelProps) {
   if (!days.length) {
     return (
       <section className="rounded-2xl border border-dashed border-tide/20 bg-foam/60 p-6 text-sm text-ink/60">
@@ -148,7 +163,12 @@ export function ItineraryPanel({ days, currency }: ItineraryPanelProps) {
   return (
     <div className="space-y-4">
       {days.map((day) => (
-        <ItineraryDayCard key={`${day.day_number}-${day.date}`} day={day} currency={currency} />
+        <ItineraryDayCard
+          key={`${day.day_number}-${day.date}`}
+          day={day}
+          currency={currency}
+          destination={destination}
+        />
       ))}
     </div>
   );

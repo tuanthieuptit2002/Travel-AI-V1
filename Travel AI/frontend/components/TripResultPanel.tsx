@@ -19,6 +19,7 @@ type TripResultPanelProps = {
     | "itinerary"
     | "warnings"
     | "recommendations"
+    | "weather"
     | "weather_notes"
     | "is_valid"
     | "trip_id"
@@ -58,7 +59,14 @@ export function TripResultPanel({ plan }: TripResultPanelProps) {
           {plan.trip_id ? (
             <div className="col-span-2">
               <dt className="text-tide/55">Mã chuyến đi đã lưu</dt>
-              <dd className="break-all font-mono text-xs text-ink/70">{plan.trip_id}</dd>
+              <dd>
+                <a
+                  href={`/${encodeURIComponent(plan.trip_id)}`}
+                  className="break-all font-mono text-xs text-lagoon underline-offset-2 hover:underline"
+                >
+                  {plan.trip_id}
+                </a>
+              </dd>
             </div>
           ) : null}
         </dl>
@@ -70,7 +78,7 @@ export function TripResultPanel({ plan }: TripResultPanelProps) {
         currency={plan.currency}
       />
 
-      <WeatherCards notes={plan.weather_notes ?? []} />
+      <WeatherCards forecasts={plan.weather ?? []} notes={plan.weather_notes ?? []} />
       <MapPlaceholder destination={plan.destination} />
 
       {plan.warnings.length > 0 ? (
@@ -97,7 +105,11 @@ export function TripResultPanel({ plan }: TripResultPanelProps) {
 
       <section>
         <h2 className="mb-3 font-display text-2xl text-tide">Lịch trình</h2>
-        <ItineraryPanel days={plan.itinerary} currency={plan.currency} />
+        <ItineraryPanel
+          days={plan.itinerary}
+          currency={plan.currency}
+          destination={plan.destination}
+        />
       </section>
     </div>
   );

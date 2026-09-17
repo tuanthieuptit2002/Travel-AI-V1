@@ -4,8 +4,8 @@ type TripDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-/** Legacy route: the trip is rendered inline in the landing page conversation. */
+/** Legacy route: saved trips now have short root-level URLs. */
 export default async function TripDetailPage({ params }: TripDetailPageProps) {
   const { id } = await params;
-  redirect(`/?trip=${encodeURIComponent(id)}`);
+  redirect(`/${encodeURIComponent(id)}`);
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { TripSummary, formatMoney, listTrips } from "../lib/api";
 import { TripListSkeleton } from "./Skeleton";
@@ -18,13 +19,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 type TripsListProps = {
-  /** When provided, trips open inline instead of navigating to a separate page. */
-  onSelect?: (trip: TripSummary) => void;
   onStartPlanning?: () => void;
   refreshKey?: number;
 };
 
-export function TripsList({ onSelect, onStartPlanning, refreshKey = 0 }: TripsListProps) {
+export function TripsList({ onStartPlanning, refreshKey = 0 }: TripsListProps) {
   const [items, setItems] = useState<TripSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,13 +115,9 @@ export function TripsList({ onSelect, onStartPlanning, refreshKey = 0 }: TripsLi
 
         return (
           <li key={trip.id}>
-            {onSelect ? (
-              <button type="button" onClick={() => onSelect(trip)} className={cardClass}>
-                {content}
-              </button>
-            ) : (
-              <div className={cardClass}>{content}</div>
-            )}
+            <Link href={`/${encodeURIComponent(trip.id)}`} className={cardClass}>
+              {content}
+            </Link>
           </li>
         );
       })}

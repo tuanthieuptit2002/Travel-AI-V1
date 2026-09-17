@@ -1,6 +1,6 @@
 # TripMind AI
 
-TripMind AI is a production-oriented, agentic travel planner focused on Vietnam. The stack includes a Next.js frontend, FastAPI backend, PostgreSQL/pgvector, Redis, typed provider tools (mock or live Google Places/Routes + Open-Meteo), and a LangGraph multi-agent travel planner. Flight booking is not integrated yet.
+TripMind AI is a production-oriented, agentic travel planner focused on Vietnam. The stack includes a Next.js frontend, FastAPI backend, PostgreSQL/pgvector, Redis, curated Vietnam place suggestions, Open-Meteo weather, and a LangGraph multi-agent travel planner. Google Maps opens from direct links in the frontend and requires no API key. Flight booking is not integrated yet.
 
 ## Architecture
 
@@ -39,12 +39,12 @@ See `backend/.env.example`, root `.env.example`, and `.env.production.example`.
 | Core | `APP_ENV`, `SECRET_KEY`, `CORS_ORIGINS`, `TRUSTED_HOSTS` |
 | Auth | `AUTH_ENABLED`, `API_KEYS`, `JWT_*` |
 | Data | `DATABASE_URL`, `REDIS_URL`, `DB_POOL_*` |
-| Providers | `TRAVEL_DATA_MODE`, `GOOGLE_MAPS_API_KEY`, `PROVIDER_HTTP_*` |
+| Providers | `TRAVEL_DATA_MODE`, `OPEN_METEO_*`, `PROVIDER_HTTP_*` |
 | LLM | `OPENAI_API_KEY`, `LLM_TIMEOUT_SECONDS`, `LLM_MAX_RETRIES` |
 | Agent | `AGENT_MAX_ITERATIONS`, `AGENT_TIMEOUT_SECONDS`, `AGENT_MAX_TOOL_CALLS` |
 | Ops | `RATE_LIMIT_*`, `CACHE_*`, `LOG_JSON`, `SENTRY_DSN` |
 
-Never put `GOOGLE_MAPS_API_KEY`, `OPENAI_API_KEY`, `SECRET_KEY`, or `API_KEYS` in `NEXT_PUBLIC_*`.
+Never put `OPENAI_API_KEY`, `SECRET_KEY`, or `API_KEYS` in `NEXT_PUBLIC_*`.
 
 ## Local development
 

@@ -78,6 +78,17 @@ class ItineraryDayOut(BaseModel):
     activities: List[ItineraryActivityOut] = Field(default_factory=list)
 
 
+class WeatherForecastOut(BaseModel):
+    destination: str
+    forecast_date: date
+    condition: str
+    temperature_min_c: float
+    temperature_max_c: float
+    precipitation_probability: int = Field(ge=0, le=100)
+    humidity_percent: int = Field(ge=0, le=100)
+    wind_speed_kph: float = Field(ge=0)
+
+
 class TripPlanResponse(BaseModel):
     """Structured planning result returned to clients."""
 
@@ -94,6 +105,7 @@ class TripPlanResponse(BaseModel):
     itinerary: List[ItineraryDayOut]
     warnings: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
+    weather: List[WeatherForecastOut] = Field(default_factory=list)
     weather_notes: List[str] = Field(default_factory=list)
     citations: List[str] = Field(default_factory=list)
     optimization_notes: List[str] = Field(default_factory=list)
@@ -121,6 +133,7 @@ class TripDetailOut(TripSummaryOut):
     itinerary: List[ItineraryDayOut] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
+    weather: List[WeatherForecastOut] = Field(default_factory=list)
     weather_notes: List[str] = Field(default_factory=list)
     citations: List[str] = Field(default_factory=list)
 

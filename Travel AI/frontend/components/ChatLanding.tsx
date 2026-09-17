@@ -45,7 +45,7 @@ const HIGHLIGHTS = [
 ];
 
 /**
- * Single landing page experience: hero composer → inline conversation → results.
+ * Single landing page experience: hero composer → two-column planning workspace.
  * Secondary surfaces (saved trips, preferences) open as drawers instead of routes.
  */
 export function ChatLanding() {
@@ -134,12 +134,6 @@ export function ChatLanding() {
     ]);
     setTick(0);
     setActiveTurnId(turnId);
-    setDraft((current) => {
-      const next = { ...current, user_request: "" };
-      savePlanDraft(next);
-      return next;
-    });
-
     try {
       const result = await planTrip(payload);
       setTurns((current) =>
@@ -174,23 +168,6 @@ export function ChatLanding() {
       activeTurnRef.current = null;
       setActiveTurnId(null);
     }
-  }, []);
-
-  const openSavedTrip = useCallback((tripId: string) => {
-    setTurns((current) => {
-      if (current.some((turn) => turn.kind === "trip" && turn.tripId === tripId)) return current;
-      return [
-        ...current,
-        {
-          id: nextTurnId("trip"),
-          kind: "trip",
-          request: "Xem lại chuyến đi đã lưu của tôi.",
-          status: "ready",
-          tripId,
-          progress: [],
-        },
-      ];
-    });
   }, []);
 
   const retryTurn = useCallback(
@@ -233,7 +210,7 @@ export function ChatLanding() {
     if (panelParam === "trips" || panelParam === "preferences") setPanel(panelParam);
 
     if (tripParam) {
-      openSavedTrip(tripParam);
+      window.location.replace(`/${encodeURIComponent(tripParam)}`);
       return;
     }
     if (wantsAutostart && stored && planDraftHasIntent(stored)) {
@@ -245,10 +222,9 @@ export function ChatLanding() {
   const hasConversation = turns.length > 0;
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden text-ink">
+    <div className="app-shell relative flex min-h-screen flex-col bg-[linear-gradient(165deg,#f7fcfa_0%,#e3f1ec_45%,#cfe6de_100%)] text-ink">
       {/* Ambient background: layered glows that drift slowly behind the content. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[linear-gradient(165deg,#f7fcfa_0%,#e3f1ec_45%,#cfe6de_100%)]" />
         <div className="absolute -top-32 right-[-10%] h-[32rem] w-[32rem] rounded-full bg-[radial-gradient(circle,rgba(15,118,110,0.16),transparent_65%)] animate-drift-a" />
         <div className="absolute bottom-[-20%] left-[-8%] h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle,rgba(242,102,59,0.12),transparent_65%)] animate-drift-b" />
       </div>
@@ -260,30 +236,56 @@ export function ChatLanding() {
       />
 
       {hasConversation ? (
-        <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 pb-4 pt-6 sm:px-6">
-          <div className="flex-1 space-y-8 pb-8">
-            {turns.map((turn, index) => (
-              <div
-                key={turn.id}
-                ref={index === turns.length - 1 ? lastTurnRef : undefined}
-                className="scroll-mt-24"
-              >
-                <ChatTurn turn={turn} onRetry={retryTurn} />
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 md:py-12 lg:px-8">
+          <div className="grid gap-10 md:grid-cols-[minmax(17rem,0.78fr)_minmax(0,1.35fr)] md:items-start md:gap-12">
+            <aside className="md:sticky md:top-28 md:self-start">
+              <div className="mb-5 border-b border-tide/10 pb-4">
+                <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lagoon">
+                    Yêu cầu chuyến đi
+                  </p>
+                  <h1 className="mt-1 font-display text-2xl text-tide">Tinh chỉnh prompt</h1>
+                </div>
+                <span className="rounded-full bg-mist px-2.5 py-1 text-xs font-medium text-tide/70">
+                  {turns.length} kết quả
+                </span>
+                </div>
               </div>
-            ))}
-          </div>
+              <PlanComposer
+                draft={draft}
+                onDraftChange={updateDraft}
+                onSubmit={runPlan}
+                busy={busy}
+                variant="workspace"
+              />
+              <p className="mt-3 px-1 text-xs leading-5 text-tide/55">
+                Chỉnh prompt hoặc tùy chọn bên trên, sau đó lập lại kế hoạch để so sánh kết quả.
+              </p>
+            </aside>
 
-          <div className="sticky bottom-0 z-20 -mx-4 bg-[linear-gradient(180deg,rgba(247,252,250,0)_0%,rgba(227,241,236,0.9)_35%,rgba(207,230,222,1)_100%)] px-4 pb-4 pt-6 sm:-mx-6 sm:px-6">
-            <PlanComposer
-              draft={draft}
-              onDraftChange={updateDraft}
-              onSubmit={runPlan}
-              busy={busy}
-              variant="docked"
-            />
-            <p className="mt-2 text-center text-[0.7rem] text-tide/50">
-              Nhấn Enter để gửi · Shift + Enter để xuống dòng · {turns.length} lượt trong cuộc trò chuyện này
-            </p>
+            <section className="min-w-0">
+              <div className="mb-5 flex items-end justify-between gap-3 border-b border-tide/10 pb-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lagoon">
+                    Lịch trình đề xuất
+                  </p>
+                  <h2 className="mt-1 font-display text-2xl text-tide">Kết quả</h2>
+                </div>
+                <p className="hidden text-xs text-tide/50 sm:block">Kết quả mới nhất ở cuối danh sách</p>
+              </div>
+              <div className="space-y-6 pb-8">
+                {turns.map((turn, index) => (
+                  <div
+                    key={turn.id}
+                    ref={index === turns.length - 1 ? lastTurnRef : undefined}
+                    className="scroll-mt-24"
+                  >
+                    <ChatTurn turn={turn} onRetry={retryTurn} />
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </main>
       ) : (
@@ -359,10 +361,6 @@ export function ChatLanding() {
           onStartPlanning={() => {
             closePanel();
             window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          onSelect={(trip) => {
-            openSavedTrip(trip.id);
-            closePanel();
           }}
         />
       </SlideOver>
